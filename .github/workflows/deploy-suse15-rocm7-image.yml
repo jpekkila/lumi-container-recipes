@@ -3,7 +3,7 @@ name: Podman Image CI
 on:
   push:
     branches: [main]
-    paths: [containers/suse16/**, .github/workflows/podman-image.yml]
+    paths: [containers/suse15-rocm7/**, .github/workflows/deploy-suse15-rocm7-image.yml]
   workflow_dispatch:
 
 permissions:
@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 180
     environment: satama
     env:
-      IMAGE: oras://satama.csc.fi/${{ vars.SATAMA_PROJECT }}/suse16
+      IMAGE: oras://satama.csc.fi/${{ vars.SATAMA_PROJECT }}/suse15-rocm7
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -24,13 +24,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes singularity-container
-      - name: Build SUSE16
-        run: ./containers/suse16/build.sh
+      - name: Build suse15-rocm7
+        run: ./containers/suse15-rocm7/build.sh
       - name: Convert to SIF
         run: |
-          podman save --format oci-archive --output "$RUNNER_TEMP"/suse16.tar suse16
-          singularity build suse16.sif oci-archive://"$RUNNER_TEMP"/suse16.tar
-          rm "$RUNNER_TEMP"/suse16.tar
+          podman save --format oci-archive --output "$RUNNER_TEMP"/suse15-rocm7.tar suse15-rocm7
+          singularity build suse15-rocm7.sif oci-archive://"$RUNNER_TEMP"/suse15-rocm7.tar
+          rm "$RUNNER_TEMP"/suse15-rocm7.tar
       - name: Sign SIF
         env:
           SIF_SIGNING_KEY: ${{ secrets.SIF_SIGNING_KEY }}
@@ -38,8 +38,8 @@ jobs:
           printf '%s\n' "$SIF_SIGNING_KEY" > "$RUNNER_TEMP"/private.asc
           singularity key import "$RUNNER_TEMP"/private.asc
           rm "$RUNNER_TEMP"/private.asc
-          singularity sign suse16.sif
-          singularity verify --local suse16.sif
+          singularity sign suse15-rocm7.sif
+          singularity verify --local suse15-rocm7.sif
       - name: Log in to registry
         env:
           SATAMA_USERNAME: ${{ secrets.SATAMA_ROBOT_USERNAME }}
@@ -47,5 +47,5 @@ jobs:
         run: printf '%s\n' "$SATAMA_PASSWORD" | singularity registry login --username "$SATAMA_USERNAME" --password-stdin oras://satama.csc.fi
       - name: Push to registry
         run: |
-          singularity push suse16.sif "$IMAGE:$GITHUB_SHA"
-          singularity push suse16.sif "$IMAGE:latest"
+          singularity push suse15-rocm7.sif "$IMAGE:$GITHUB_SHA"
+          singularity push suse15-rocm7.sif "$IMAGE:latest"
