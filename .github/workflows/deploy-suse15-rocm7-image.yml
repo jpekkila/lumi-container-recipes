@@ -1,4 +1,4 @@
-name: Podman Image CI
+name: suse15-rocm7 CI
 
 on:
   push:
